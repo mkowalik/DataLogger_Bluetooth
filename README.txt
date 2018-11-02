@@ -1,0 +1,1 @@
+Bluetooth HC-05 module + STM32 project of Bluetooth Data Transmitter as part of CAN+GPS Data Logging system for AGH Racing/diploma thesis for Telecommunication Technologies at AGH University of Science and Technology. 
