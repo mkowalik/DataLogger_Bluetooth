@@ -39,15 +39,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f7xx_hal.h"
-#include "eth.h"
 #include "usart.h"
-#include "usb_otg.h"
 #include "gpio.h"
-#include "led_driver.h"
 
 /* USER CODE BEGIN Includes */
 
 #include "UartDriver.h"
+#include "led_driver.h"
 
 /* USER CODE END Includes */
 
@@ -60,7 +58,6 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_NVIC_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +65,9 @@ static void MX_NVIC_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+
+UartDriver_TypeDef uartDriver;
+LedDriver_TypeDef ledDriver;
 
 /* USER CODE END 0 */
 
@@ -100,30 +100,22 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-//  MX_ETH_Init();
-//  MX_USART3_UART_Init();
-//  MX_USB_OTG_FS_PCD_Init();
   MX_USART1_UART_Init();
-
-  /* Initialize interrupts */
-  MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
-  //UartDriver_TypeDef uartDriver;
-//  LedDriver_TypeDef ledDriver;
-//  LedDriver_Pin_TypeDef ledDebug2Pin = LD2_Pin;
-//  LedDriver_init(&ledDriver, (LedDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin);
+  LedDriver_Pin_TypeDef ledDebug2Pin = LD2_Pin;
+  LedDriver_init(&ledDriver, (LedDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin);
 
-//  LedDriver_OnLed(&ledDriver);
-//  HAL_Delay(500);
-//  LedDriver_OffLed(&ledDriver);
+  LedDriver_OnLed(&ledDriver);
+  HAL_Delay(500);
+  LedDriver_OffLed(&ledDriver);
 
-  /*uint8_t buffer[] = {1, 2, 3, 4};
+  uint8_t buffer[] = {1, 2, 3, 4};
 
   UartDriver_init(&uartDriver, &huart1, 9600);
   UartDriver_sendBytes(&uartDriver, buffer, 4);
   UartDriver_changeBaudRate(&uartDriver, 38400);
-  UartDriver_sendBytes(&uartDriver, buffer, 4);*/
+  UartDriver_sendBytes(&uartDriver, buffer, 4);
 
   /* USER CODE END 2 */
 
@@ -131,11 +123,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  LedDriver_OnLed(&ledDriver);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	  LedDriver_OnLed(&ledDriver);
 	  HAL_Delay(500);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-//	  LedDriver_OffLed(&ledDriver);
+	  LedDriver_OffLed(&ledDriver);
 	  HAL_Delay(100);
 
   /* USER CODE END WHILE */
@@ -166,11 +156,12 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 96;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
@@ -200,11 +191,8 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART3
-                              |RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1;
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
-  PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
-  PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -220,20 +208,6 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-}
-
-/**
-  * @brief NVIC Configuration.
-  * @retval None
-  */
-static void MX_NVIC_Init(void)
-{
-  /* USART1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART1_IRQn);
-  /* RCC_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(RCC_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(RCC_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
