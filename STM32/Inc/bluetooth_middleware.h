@@ -5,11 +5,11 @@
  *      Author: Kowalik
  */
 
-#ifndef BLUETOOTHMIDDLEWARE_H_
-#define BLUETOOTHMIDDLEWARE_H_
+#ifndef BLUETOOTH_MIDDLEWARE_H_
+#define BLUETOOTH_MIDDLEWARE_H_
 
-#include "UARTDriver.h"
-
+#include "uart_driver.h"
+/*
 typedef enum {
 	BluetoothMiddleware_Status_OK = 0,
 	BluetoothMiddleware_Status_UnInitializedErrror,
@@ -18,23 +18,19 @@ typedef enum {
 
 typedef enum {
 	BluetoothMiddleware_State_UnInitialized = 0,
-	BluetoothMiddleware_State_Ready,
-	BluetoothMiddleware_State_BusyRx,
-	BluetoothMiddleware_State_BusyTx,
-	BluetoothMiddleware_State_BusyRxTx,
-	BluetoothMiddleware_State_BusyRxTx,
+	BluetoothMiddleware_State_Ready_DataMode,
+	BluetoothMiddleware_State_Ready_ATMode
 } BluetoothMiddleware_State_TypeDef;
 
 typedef struct {
 	UartDriver_TypeDef*			pUartDriver;
 	UartDriver_State_TypeDef	state;
-} BluetoothMiddleware_TypeDef;
+} BluetoothMiddleware_State_TypeDef;
 
 BluetoothMiddleware_Status_TypeDef BluetootMiddleware_init(BluetoothMiddleware_TypeDef* pSelf, UartDriver_TypeDef* pUartDriver);
 
-BluetoothMiddleware_Status_TypeDef BluetootMiddleware_setATMode(BluetoothMiddleware_TypeDef* pSelf);
-
 BluetoothMiddleware_Status_TypeDef BluetootMiddleware_setDeviceName(BluetoothMiddleware_TypeDef* pSelf, char* pDeviceName);
+BluetoothMiddleware_Status_TypeDef BluetootMiddleware_getDeviceName(BluetoothMiddleware_TypeDef* pSelf, char* pRetDeviceName);
 BluetoothMiddleware_Status_TypeDef BluetootMiddleware_getDeviceName(BluetoothMiddleware_TypeDef* pSelf, char* pRetDeviceName);
 
 BluetoothMiddleware_Status_TypeDef BluetootMiddleware_getState(BluetoothMiddleware_TypeDef* pSelf, BluetoothMiddleware_State_TypeDef* pRetState);
@@ -48,5 +44,5 @@ BluetoothMiddleware_Status_TypeDef BluetootMiddleware_sendData(BluetoothMiddlewa
 
 BluetoothMiddleware_Status_TypeDef BluetootMiddleware_setReceiveDataCallback(BluetoothMiddleware_TypeDef* pSelf, void (*foo)(uint8_t* pData, uint32_t bytes));
 
-
-#endif /* BLUETOOTHMIDDLEWARE_H_ */
+*/
+#endif /* BLUETOOTH_MIDDLEWARE_H_ */

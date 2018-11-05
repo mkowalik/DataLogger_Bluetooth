@@ -44,8 +44,11 @@
 
 /* USER CODE BEGIN Includes */
 
-#include "UartDriver.h"
-#include "led_driver.h"
+#include "digital_out_driver.h"
+#include "uart_driver.h"
+#include "hc05_driver.h"
+
+#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -53,6 +56,22 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
+UartDriver_TypeDef 			uart1Driver;
+
+HC05Driver_TypeDef			hc05Driver;
+
+DigitalOutDriver_TypeDef	led1Driver;
+DigitalOutDriver_TypeDef	led2Driver;
+DigitalOutDriver_TypeDef	led3Driver;
+
+DigitalOutDriver_TypeDef	hc05KeyDriver;
+
+DigitalOutDriver_Pin_TypeDef hc05KeyPin = HC05_KEY_Pin;
+
+//DigitalOutDriver_Pin_TypeDef ledDebug1Pin = LD1_Pin;
+DigitalOutDriver_Pin_TypeDef ledDebug2Pin = LD2_Pin;
+DigitalOutDriver_Pin_TypeDef ledDebug3Pin = LD3_Pin;
 
 /* USER CODE END PV */
 
@@ -66,8 +85,16 @@ void SystemClock_Config(void);
 
 /* USER CODE BEGIN 0 */
 
-UartDriver_TypeDef uartDriver;
-LedDriver_TypeDef ledDriver;
+extern UART_HandleTypeDef huart1;
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (huart == (&huart1)){
+		if (UartDriver_receivedBytesCallback(&uart1Driver) != UartDriver_Status_OK){
+			Error_Handler();
+		}
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -103,19 +130,29 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  LedDriver_Pin_TypeDef ledDebug2Pin = LD2_Pin;
-  LedDriver_init(&ledDriver, (LedDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin);
+//  DigitalOutDriver_init(&led1Driver, (DigitalOutDriver_Port_TypeDef*)LD1_GPIO_Port, &ledDebug1Pin);
+  DigitalOutDriver_init(&led2Driver, (DigitalOutDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin);
+  DigitalOutDriver_init(&led3Driver, (DigitalOutDriver_Port_TypeDef*)LD3_GPIO_Port, &ledDebug3Pin);
 
-  LedDriver_OnLed(&ledDriver);
-  HAL_Delay(500);
-  LedDriver_OffLed(&ledDriver);
+  DigitalOutDriver_init(&hc05KeyDriver, (DigitalOutDriver_Port_TypeDef*)HC05_KEY_GPIO_Port, &hc05KeyPin);
 
-  uint8_t buffer[] = {1, 2, 3, 4};
+  UartDriver_init(&uart1Driver, &huart1, 38400);
 
-  UartDriver_init(&uartDriver, &huart1, 9600);
+  char tmp[] = "AT\r\n";
+
+  char retBuffer[20];
+  memset(retBuffer, 0, 20);
+
+  UartDriver_Status_TypeDef tmp2 = UartDriver_sendAndReceive(&uart1Driver, (uint8_t*)tmp, 4u, (uint8_t*)retBuffer, 20u, (uint8_t)'\n');
+//  UartDriver_sendAndReceive(&uart1Driver, "AT+NAME=TAST\r\n", strlen("AT+NAME=TEST\r\n"), retBuffer, 20, '\n');
+
+  HC05Driver_init(&hc05Driver, HC05Driver_Role_Slave, &uart1Driver, &hc05KeyDriver, HC05_DATA_BAUDRATE, HC05_DEVICE_NAME, HC05_PASSWORD);
+
+/*  uint8_t buffer[] = {1, 2, 3, 4};
+
   UartDriver_sendBytes(&uartDriver, buffer, 4);
-  UartDriver_changeBaudRate(&uartDriver, 38400);
-  UartDriver_sendBytes(&uartDriver, buffer, 4);
+  UartDriver_setBaudRate(&uartDriver, 38400);
+  UartDriver_sendBytes(&uartDriver, buffer, 4);*/
 
   /* USER CODE END 2 */
 
@@ -123,9 +160,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  LedDriver_OnLed(&ledDriver);
+	  DigitalOutDriver_On(&led2Driver);
 	  HAL_Delay(500);
-	  LedDriver_OffLed(&ledDriver);
+	  DigitalOutDriver_Off(&led2Driver);
 	  HAL_Delay(100);
 
   /* USER CODE END WHILE */
@@ -156,12 +193,11 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = 16;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 96;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
