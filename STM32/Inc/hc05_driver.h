@@ -67,6 +67,11 @@
 #define	HC05_COMMAND_TRIM_SIGN				'\n'
 
 #define HC05_START_UP_DELAY_MS				750
+#define HC05_AT_MODE_DELAY_MS				20
+
+#define	HC05_DRIVER_MAX_CALLBACK_NUMBER		UART_DRIVER_MAX_CALLBACK_NUMBER
+
+typedef int16_t HC05Driver_CallbackIterator_TypeDef;
 
 typedef enum {
 	HC05Driver_State_UnInitialized 		= 0,
@@ -98,11 +103,14 @@ typedef enum {
 } HC05Driver_Status_TypeDef;
 
 typedef struct {
-	UartDriver_TypeDef*			pUartDriver;
-	DigitalOutDriver_TypeDef* 	pKeyPinDriver;
-	HC05Driver_State_TypeDef	state;
-	uint32_t					dataBaudRate;
-	uint8_t						buffer[HC05_BUFFER_SIZE];
+	UartDriver_TypeDef*					pUartDriver;
+	DigitalOutDriver_TypeDef* 			pKeyPinDriver;
+	HC05Driver_State_TypeDef			state;
+	uint32_t							dataBaudRate;
+	uint8_t								buffer[HC05_BUFFER_SIZE];
+	UartDriver_CallbackIterator_TypeDef	callbacksIterators[HC05_DRIVER_MAX_CALLBACK_NUMBER];
+	void (*callbacks[HC05_DRIVER_MAX_CALLBACK_NUMBER])(uint8_t byte, void* pArgs);
+	void*								callbackArgs[HC05_DRIVER_MAX_CALLBACK_NUMBER];
 } HC05Driver_TypeDef;
 
 /**
@@ -111,9 +119,6 @@ typedef struct {
 HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_Role_TypeDef role, \
 		UartDriver_TypeDef* pUartDriver, DigitalOutDriver_TypeDef* pKeyPinDriver, uint32_t baudRate,
 		char* name, uint16_t password);
-
-HC05Driver_Status_TypeDef BluetootMiddleware_setDeviceName(HC05Driver_TypeDef* pSelf, char* pDeviceName);
-HC05Driver_Status_TypeDef BluetootMiddleware_getDeviceName(HC05Driver_TypeDef* pSelf, char* pRetDeviceName);
 
 HC05Driver_Status_TypeDef HC05Driver_sendTestATCommand(HC05Driver_TypeDef* pSelf);
 HC05Driver_Status_TypeDef HC05Driver_sendRestoreDefualtCommand(HC05Driver_TypeDef* pSelf);
@@ -137,5 +142,10 @@ HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataTerminationSign(HC05Drive
 		uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);
 HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataNBytes(HC05Driver_TypeDef* pSelf, uint8_t* pSendData, uint16_t bytesToSend, \
 		uint8_t* pReceiveBuffer, uint16_t bytesToReceive);
+
+HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* pSelf, void (*foo)(uint8_t byte, void* pArgs), void* pArgs, HC05Driver_CallbackIterator_TypeDef* pRetCallbackIterator);
+HC05Driver_Status_TypeDef HC05Driver_removeReceiveDataCallback(HC05Driver_TypeDef* pSelf, UartDriver_CallbackIterator_TypeDef callbackIterator);
+
+HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf);
 
 #endif /* HC05Driver_DRIVER_H_ */

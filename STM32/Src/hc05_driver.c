@@ -11,7 +11,6 @@
 
 static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* pSelf);
 static HC05Driver_Status_TypeDef HC05Driver_setATMode(HC05Driver_TypeDef* pSelf);
-static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf);
 
 HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_Role_TypeDef role, \
 		UartDriver_TypeDef* pUartDriver, DigitalOutDriver_TypeDef* pKeyPinDriver, uint32_t baudRate,
@@ -33,6 +32,12 @@ HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_R
 	pSelf->pKeyPinDriver = pKeyPinDriver;
 	pSelf->dataBaudRate = baudRate;
 
+	for (uint16_t i=0; i<HC05_DRIVER_MAX_CALLBACK_NUMBER; i++){
+		pSelf->callbacks[i] 			= NULL;
+		pSelf->callbackArgs[i] 			= NULL;
+		pSelf->callbacksIterators[i] 	= -1;
+	}
+
 	memset(pSelf->buffer, 0, HC05_BUFFER_SIZE);
 
 	uint32_t	tmpUartBaudRate;
@@ -45,6 +50,8 @@ HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_R
 			return HC05Driver_Status_Error;
 		}
 	}
+
+	HAL_Delay(HC05_START_UP_DELAY_MS);
 
 	if ((ret = HC05Driver_sendTestATCommand(pSelf)) != HC05Driver_Status_OK){
 		return ret;
@@ -97,7 +104,7 @@ HC05Driver_Status_TypeDef HC05Driver_sendTestATCommand(HC05Driver_TypeDef* pSelf
 	strlcpy((char*)pSelf->buffer, HC05_AT_PREFIX_COMMAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -126,7 +133,7 @@ HC05Driver_Status_TypeDef HC05Driver_sendRestoreDefualtCommand(HC05Driver_TypeDe
 	strlcat((char*)pSelf->buffer, HC05_RESTORE_ORGL_AT_COMMAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -155,7 +162,7 @@ HC05Driver_Status_TypeDef HC05Driver_getBaudRate(HC05Driver_TypeDef* pSelf, uint
 	strlcat((char*)pSelf->buffer, HC05_GET_UART_AT_COMMNAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -169,7 +176,7 @@ HC05Driver_Status_TypeDef HC05Driver_getBaudRate(HC05Driver_TypeDef* pSelf, uint
 	*pRetBaudRate = atoi((char*)(pSelf->buffer + strlen(HC05_GET_UART_AT_COMMNAND_RESPONSE)));
 	//TODO tutaj sprawdzic parity i bity stopu
 
-	if (UartDriver_receiveBytes(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_receiveBytesTerminationSign(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -208,7 +215,7 @@ HC05Driver_Status_TypeDef HC05Driver_setBaudRate(HC05Driver_TypeDef* pSelf, uint
 		length += 			sprintf ((char*)pSelf->buffer + length, ",%lu", HC05_PARITY_SETUP);
 							strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-		if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+		if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 			return HC05Driver_Status_Error;
 		}
 		if (strncmp((char*)pSelf->buffer, HC05_SET_OK_COMMAND_RESPONSE, strlen(HC05_SET_OK_COMMAND_RESPONSE)) != 0){
@@ -236,7 +243,7 @@ HC05Driver_Status_TypeDef HC05Driver_getPassword(HC05Driver_TypeDef* pSelf, uint
 	strlcat((char*)pSelf->buffer, HC05_GET_PSWD_AT_COMMNAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -248,7 +255,7 @@ HC05Driver_Status_TypeDef HC05Driver_getPassword(HC05Driver_TypeDef* pSelf, uint
 
 	*pRetPassword = atoi((char*)(pSelf->buffer + strlen(HC05_GET_PSWD_AT_COMMNAND_RESPONSE)));
 
-	if (UartDriver_receiveBytes(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_receiveBytesTerminationSign(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -286,7 +293,7 @@ HC05Driver_Status_TypeDef HC05Driver_setPassword(HC05Driver_TypeDef* pSelf, uint
 		length += 			sprintf ((char*)pSelf->buffer + length, "%lu", password);
 							strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-		if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+		if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 			return HC05Driver_Status_Error;
 		}
 		if (strncmp((char*)pSelf->buffer, HC05_SET_OK_COMMAND_RESPONSE, strlen(HC05_SET_OK_COMMAND_RESPONSE)) != 0){
@@ -314,7 +321,7 @@ HC05Driver_Status_TypeDef HC05Driver_getDeviceName(HC05Driver_TypeDef* pSelf, ch
 	strlcat((char*)pSelf->buffer, HC05_GET_NAME_AT_COMMNAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -326,7 +333,7 @@ HC05Driver_Status_TypeDef HC05Driver_getDeviceName(HC05Driver_TypeDef* pSelf, ch
 
 	strncpy(pRetDeviceName, (char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_MAX_NAME_LENGTH);
 
-	if (UartDriver_receiveBytes(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_receiveBytesTerminationSign(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -363,7 +370,7 @@ HC05Driver_Status_TypeDef HC05Driver_setDeviceName(HC05Driver_TypeDef* pSelf, ch
 		strlcat((char*)pSelf->buffer, deviceName,  HC05_BUFFER_SIZE);
 		strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-		if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+		if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 			return HC05Driver_Status_Error;
 		}
 		if (strncmp((char*)pSelf->buffer, HC05_SET_OK_COMMAND_RESPONSE, strlen(HC05_SET_OK_COMMAND_RESPONSE)) != 0){
@@ -390,7 +397,7 @@ HC05Driver_Status_TypeDef HC05Driver_getDeviceRole(HC05Driver_TypeDef* pSelf, HC
 	strlcat((char*)pSelf->buffer, HC05_GET_ROLE_AT_COMMAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -402,7 +409,7 @@ HC05Driver_Status_TypeDef HC05Driver_getDeviceRole(HC05Driver_TypeDef* pSelf, HC
 
 	*pRetRole = atoi((char*)(pSelf->buffer + strlen(HC05_GET_ROLE_AT_COMMNAND_RESPONSE)));
 
-	if (UartDriver_receiveBytes(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_receiveBytesTerminationSign(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -440,7 +447,7 @@ HC05Driver_Status_TypeDef HC05Driver_setDeviceRole(HC05Driver_TypeDef* pSelf, HC
 		length += 			sprintf ((char*)pSelf->buffer + length, "%du", role);
 							strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-		if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+		if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 			return HC05Driver_Status_Error;
 		}
 		if (strncmp((char*)pSelf->buffer, HC05_SET_OK_COMMAND_RESPONSE, strlen(HC05_SET_OK_COMMAND_RESPONSE)) != 0){
@@ -469,7 +476,7 @@ HC05Driver_Status_TypeDef HC05Driver_getState(HC05Driver_TypeDef* pSelf, HC05Dri
 	strlcat((char*)pSelf->buffer, HC05_GET_STATE_AT_COMMNAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -479,27 +486,27 @@ HC05Driver_Status_TypeDef HC05Driver_getState(HC05Driver_TypeDef* pSelf, HC05Dri
 		return HC05Driver_Status_Error;
 	}
 
-	if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_INITIALIZED_RESPONSE, strlen(HC05_INITIALIZED_RESPONSE)) == 0){
+	if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_INITIALIZED_RESPONSE, strlen(HC05_INITIALIZED_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Initialized;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_READY_RESPONSE, strlen(HC05_READY_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_READY_RESPONSE, strlen(HC05_READY_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Ready;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_PAIRABLE_RESPONSE, strlen(HC05_PAIRABLE_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_PAIRABLE_RESPONSE, strlen(HC05_PAIRABLE_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Pairable;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_PAIRED_RESPONSE, strlen(HC05_PAIRED_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_PAIRED_RESPONSE, strlen(HC05_PAIRED_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Paired;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_INQUIRING_RESPONSE, strlen(HC05_PAIRED_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_INQUIRING_RESPONSE, strlen(HC05_PAIRED_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Inquiring;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_CONNECTING_RESPONSE, strlen(HC05_CONNECTING_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_CONNECTING_RESPONSE, strlen(HC05_CONNECTING_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Connecting;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_CONNECTED_RESPONSE, strlen(HC05_CONNECTED_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_CONNECTED_RESPONSE, strlen(HC05_CONNECTED_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Connected;
-	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_NAME_AT_COMMNAND_RESPONSE)), HC05_DISCONNECTED_RESPONSE, strlen(HC05_DISCONNECTED_RESPONSE)) == 0){
+	} else if (strncmp((char*)(pSelf->buffer+strlen(HC05_GET_STATE_AT_COMMNAND_RESPONSE)), HC05_DISCONNECTED_RESPONSE, strlen(HC05_DISCONNECTED_RESPONSE)) == 0){
 		*pRetState = HC05Driver_State_Disconnected;
 	} else {
 		return HC05Driver_Status_Error;
 	}
 
-	if (UartDriver_receiveBytes(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_receiveBytesTerminationSign(pSelf->pUartDriver, pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -524,17 +531,138 @@ HC05Driver_Status_TypeDef HC05Driver_sendData(HC05Driver_TypeDef* pSelf, uint8_t
 		return ret;
 	}
 
+	if (UartDriver_sendBytes(pSelf->pUartDriver, data, bytes) != UartDriver_Status_OK){
+		return HC05Driver_Status_Error;
+	}
+
+	return HC05Driver_Status_OK;
 
 }
 
 HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataTerminationSign(HC05Driver_TypeDef* pSelf, uint8_t* pSendData, uint16_t bytesToSend, \
 		uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign){
 
+	if (pSelf->state == HC05Driver_State_UnInitialized){
+		return HC05Driver_Status_UnInitializedError;
+	}
+
+	HC05Driver_Status_TypeDef ret;
+
+	if ((ret = HC05Driver_setDataMode(pSelf)) != HC05Driver_Status_OK) {
+		return ret;
+	}
+
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSendData, bytesToSend, pReceiveBuffer, bufferSize, terminationSign) != UartDriver_Status_OK){
+		return HC05Driver_Status_Error;
+	}
+
+	return HC05Driver_Status_OK;
 }
 
 HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataNBytes(HC05Driver_TypeDef* pSelf, uint8_t* pSendData, uint16_t bytesToSend, \
 		uint8_t* pReceiveBuffer, uint16_t bytesToReceive){
 
+	if (pSelf->state == HC05Driver_State_UnInitialized){
+		return HC05Driver_Status_UnInitializedError;
+	}
+
+	HC05Driver_Status_TypeDef ret;
+
+	if ((ret = HC05Driver_setDataMode(pSelf)) != HC05Driver_Status_OK) {
+		return ret;
+	}
+
+	if (UartDriver_sendAndReceiveNBytes(pSelf->pUartDriver, pSendData, bytesToSend, pReceiveBuffer, bytesToReceive) != UartDriver_Status_OK){
+		return HC05Driver_Status_Error;
+	}
+
+	return HC05Driver_Status_OK;
+
+}
+
+HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* pSelf, void (*foo)(uint8_t byte, void* pArgs), void* pArgs, HC05Driver_CallbackIterator_TypeDef* pRetCallbackIterator){
+
+	if (pSelf->state == HC05Driver_State_UnInitialized){
+		return HC05Driver_Status_UnInitializedError;
+	}
+
+	DigitalOutDriver_State_TypeDef	keyState;
+	if (DigitalOutDriver_getState(pSelf->pKeyPinDriver, &keyState) != DigitalOutDriver_Status_OK){
+		return HC05Driver_Status_Error;
+	}
+
+	uint16_t i;
+	for (i=0; i<HC05_DRIVER_MAX_CALLBACK_NUMBER; i++){
+		if (pSelf->callbacks[i] == NULL){
+			pSelf->callbacks[i] = foo;
+			pSelf->callbackArgs[i] = pArgs;
+			pSelf->callbacksIterators[i] = -1;
+			break;
+		}
+	}
+
+	if (pRetCallbackIterator != NULL){
+		*pRetCallbackIterator = (HC05Driver_CallbackIterator_TypeDef)i;
+	}
+
+	if (!(pSelf->state == HC05Driver_State_HardAT || keyState == DigitalOutDriver_State_Stady)){
+
+		if (UartDriver_setReceiveDataCallback(pSelf->pUartDriver, foo, pArgs, &pSelf->callbacksIterators[i]) != UartDriver_Status_OK){
+			return HC05Driver_Status_Error;
+		}
+	}
+
+	return HC05Driver_Status_OK;
+}
+
+HC05Driver_Status_TypeDef HC05Driver_removeReceiveDataCallback(HC05Driver_TypeDef* pSelf, UartDriver_CallbackIterator_TypeDef callIt){
+
+	if (pSelf->state == HC05Driver_State_UnInitialized){
+		return HC05Driver_Status_UnInitializedError;
+	}
+
+	if (pSelf->callbacks[callIt] == NULL){
+		return HC05Driver_Status_Error;
+	}
+
+	pSelf->callbacks[callIt] = NULL;
+	pSelf->callbackArgs[callIt] = NULL;
+
+	if (pSelf->callbacksIterators[callIt] >= 0){
+		if (UartDriver_removeReceiveDataCallback(pSelf->pUartDriver, pSelf->callbacksIterators[callIt]) != UartDriver_Status_OK){
+			return HC05Driver_Status_Error;
+		}
+		pSelf->callbacksIterators[callIt] = -1;
+	}
+
+	return HC05Driver_Status_OK;
+}
+
+HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
+
+	if (pSelf->state == HC05Driver_State_UnInitialized){
+		return HC05Driver_Status_UnInitializedError;
+	}
+
+	if (pSelf->state == HC05Driver_State_HardAT){
+		return HC05Driver_Status_Error;
+	}
+
+	if (DigitalOutDriver_setLow(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
+		return HC05Driver_Status_Error;
+	}
+
+	HAL_Delay(HC05_AT_MODE_DELAY_MS);
+
+	for (uint16_t i=0; i<HC05_DRIVER_MAX_CALLBACK_NUMBER; i++){
+		if (pSelf->callbacks[i] != NULL){
+			if (UartDriver_setReceiveDataCallback(pSelf->pUartDriver, pSelf->callbacks[i], pSelf->callbackArgs[i], &pSelf->callbacksIterators[i]) != UartDriver_Status_OK){
+				return HC05Driver_Status_Error;
+			}
+		}
+	}
+
+	return HC05Driver_Status_OK;
 }
 
 static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* pSelf){
@@ -551,7 +679,7 @@ static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* 
 		return HC05Driver_Status_OK;
 	}
 
-	if (DigitalOutDriver_Off(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
+	if (DigitalOutDriver_setLow(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -559,7 +687,7 @@ static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* 
 	strlcat((char*)pSelf->buffer, HC05_AT_RESET_COMMAND, HC05_BUFFER_SIZE);
 	strlcat((char*)pSelf->buffer, HC05_COMMAND_TERMINATION, HC05_BUFFER_SIZE);
 
-	if (UartDriver_sendAndReceive(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
+	if (UartDriver_sendAndReceiveTerminationSign(pSelf->pUartDriver, pSelf->buffer, strlen((char*)pSelf->buffer), pSelf->buffer, HC05_BUFFER_SIZE, HC05_COMMAND_TRIM_SIGN) != UartDriver_Status_OK){
 		return HC05Driver_Status_Error;
 	}
 
@@ -582,7 +710,7 @@ static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* 
 		}
 	}
 
-	HAL_Delay(HC05_START_UP_DELAY_MS);
+	HAL_Delay(HC05_START_UP_DELAY_MS); //TODO Zamiast delay zrobic while'a ktory bedzie wysylal komende z timeoutem kilka razy i czekal az w koncu dostanie odpowiedz
 
 	if ((ret = HC05Driver_sendTestATCommand(pSelf)) != HC05Driver_Status_OK){
 		return ret;
@@ -596,28 +724,24 @@ static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* 
 		return HC05Driver_Status_Error;
 	}
 
-	return HC05Driver_Status_OK;
+	return HC05Driver_setDataMode(pSelf);
 }
 
 static HC05Driver_Status_TypeDef HC05Driver_setATMode(HC05Driver_TypeDef* pSelf){
 
 	if (pSelf->state != HC05Driver_State_HardAT){
-		if (DigitalOutDriver_On(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
+		if (DigitalOutDriver_setHigh(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
 			return HC05Driver_Status_Error;
 		}
+		HAL_Delay(HC05_AT_MODE_DELAY_MS);
 	}
 
-	return HC05Driver_Status_OK;
-}
-
-static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
-
-	if (pSelf->state == HC05Driver_State_HardAT){
-		return HC05Driver_resetNormalMode(pSelf);
-	}
-
-	if (DigitalOutDriver_Off(pSelf->pKeyPinDriver) != DigitalOutDriver_Status_OK){
-		return HC05Driver_Status_Error;
+	for (uint16_t i=0; i<HC05_DRIVER_MAX_CALLBACK_NUMBER; i++){
+		if (pSelf->callbacks[i] != NULL && pSelf->callbacksIterators[i] >= 0){
+			if (UartDriver_removeReceiveDataCallback(pSelf->pUartDriver, pSelf->callbacksIterators[i]) != UartDriver_Status_OK){
+				return HC05Driver_Status_Error;
+			}
+		}
 	}
 
 	return HC05Driver_Status_OK;

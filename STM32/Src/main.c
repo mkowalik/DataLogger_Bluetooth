@@ -87,13 +87,26 @@ void SystemClock_Config(void);
 
 extern UART_HandleTypeDef huart1;
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	if (huart == (&huart1)){
 		if (UartDriver_receivedBytesCallback(&uart1Driver) != UartDriver_Status_OK){
 			Error_Handler();
 		}
 	}
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+	if (huart == (&huart1)){
+		if (UartDriver_transmitCompleteCallback(&uart1Driver) != UartDriver_Status_OK){
+			Error_Handler();
+		}
+	}
+}
+
+void foo(uint8_t byte, void* dummy){
+
+	DigitalOutDriver_toggle(&led3Driver);
+
 }
 
 /* USER CODE END 0 */
@@ -138,16 +151,9 @@ int main(void)
 
   UartDriver_init(&uart1Driver, &huart1, 38400);
 
-  char tmp[] = "AT\r\n";
-
-  char retBuffer[20];
-  memset(retBuffer, 0, 20);
-
-  UartDriver_Status_TypeDef tmp2 = UartDriver_sendAndReceive(&uart1Driver, (uint8_t*)tmp, 4u, (uint8_t*)retBuffer, 20u, (uint8_t)'\n');
-//  UartDriver_sendAndReceive(&uart1Driver, "AT+NAME=TAST\r\n", strlen("AT+NAME=TEST\r\n"), retBuffer, 20, '\n');
-
   HC05Driver_init(&hc05Driver, HC05Driver_Role_Slave, &uart1Driver, &hc05KeyDriver, HC05_DATA_BAUDRATE, HC05_DEVICE_NAME, HC05_PASSWORD);
 
+  HC05Driver_setReceiveDataCallback(&hc05Driver, foo, NULL, NULL);
 /*  uint8_t buffer[] = {1, 2, 3, 4};
 
   UartDriver_sendBytes(&uartDriver, buffer, 4);
@@ -160,10 +166,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  DigitalOutDriver_On(&led2Driver);
+	  DigitalOutDriver_setHigh(&led2Driver);
+	  HAL_Delay(200);
+	  DigitalOutDriver_setLow(&led2Driver);
 	  HAL_Delay(500);
-	  DigitalOutDriver_Off(&led2Driver);
-	  HAL_Delay(100);
 
   /* USER CODE END WHILE */
 

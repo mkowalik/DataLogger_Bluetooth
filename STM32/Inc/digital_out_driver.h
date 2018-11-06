@@ -13,9 +13,9 @@
 
 typedef enum {
 	DigitalOutDriver_State_UnInitialized = 0,
-	DigitalOutDriver_State_Off,
-	DigitalOutDriver_State_OnBlinking,
-	DigitalOutDriver_State_OnStady
+	DigitalOutDriver_State_Low,
+	DigitalOutDriver_State_Blinking,
+	DigitalOutDriver_State_Stady
 } DigitalOutDriver_State_TypeDef;
 
 typedef enum {
@@ -28,7 +28,7 @@ typedef	GPIO_TypeDef	DigitalOutDriver_Port_TypeDef;
 typedef	uint16_t		DigitalOutDriver_Pin_TypeDef;
 
 typedef struct {
-	DigitalOutDriver_State_TypeDef			state;
+	DigitalOutDriver_State_TypeDef	state;
 	DigitalOutDriver_Port_TypeDef*	port;
 	DigitalOutDriver_Pin_TypeDef*	pin;
 	uint32_t						onTimeMs;
@@ -38,9 +38,10 @@ typedef struct {
 
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_Port_TypeDef* port, DigitalOutDriver_Pin_TypeDef* pin);
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_getState(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_State_TypeDef* pRetState);
-DigitalOutDriver_Status_TypeDef DigitalOutDriver_On(DigitalOutDriver_TypeDef* pSelf);
-DigitalOutDriver_Status_TypeDef DigitalOutDriver_Off(DigitalOutDriver_TypeDef* pSelf);
-DigitalOutDriver_Status_TypeDef DigitalOutDriver_BlinkingLed(DigitalOutDriver_TypeDef* pSelf, uint32_t onTimeMs, uint32_t offTimeMs);
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_setHigh(DigitalOutDriver_TypeDef* pSelf);
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_setLow(DigitalOutDriver_TypeDef* pSelf);
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_setBlinking(DigitalOutDriver_TypeDef* pSelf, uint32_t lowTimeMs, uint32_t highTimeMs);
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_toggle(DigitalOutDriver_TypeDef* pSelf);
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_1msElapsedCallbackHandler(DigitalOutDriver_TypeDef* pSelf);
 
 
