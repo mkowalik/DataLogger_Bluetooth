@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * COPYRIGHT(c) 2019 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -65,8 +65,12 @@
 #define RMII_RXD0_GPIO_Port GPIOC
 #define RMII_RXD1_Pin GPIO_PIN_5
 #define RMII_RXD1_GPIO_Port GPIOC
+#define LD1_Pin GPIO_PIN_0
+#define LD1_GPIO_Port GPIOB
 #define HC05_KEY_Pin GPIO_PIN_1
 #define HC05_KEY_GPIO_Port GPIOB
+#define DUBUG_OUT_0_Pin GPIO_PIN_11
+#define DUBUG_OUT_0_GPIO_Port GPIOB
 #define RMII_TXD1_Pin GPIO_PIN_13
 #define RMII_TXD1_GPIO_Port GPIOB
 #define LD3_Pin GPIO_PIN_14

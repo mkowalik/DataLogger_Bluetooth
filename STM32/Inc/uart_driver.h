@@ -12,7 +12,7 @@
 #include "stm32f7xx_hal.h"
 
 #define	UART_DRIVER_TIMEOUT				500
-#define UART_DRIVER_MAX_CALLBACK_NUMBER	10
+#define UART_DRIVER_MAX_CALLBACK_NUMBER	2
 #define UART_DRIVER_BUFFER_SIZE			128
 
 typedef enum {

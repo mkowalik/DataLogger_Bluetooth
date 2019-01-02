@@ -605,7 +605,7 @@ HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* 
 		*pRetCallbackIterator = (HC05Driver_CallbackIterator_TypeDef)i;
 	}
 
-	if (!(pSelf->state == HC05Driver_State_HardAT || keyState == DigitalOutDriver_State_Stady)){
+	if (!(pSelf->state == HC05Driver_State_HardAT || keyState == DigitalOutDriver_State_High_Stady)){
 
 		if (UartDriver_setReceiveDataCallback(pSelf->pUartDriver, foo, pArgs, &pSelf->callbacksIterators[i]) != UartDriver_Status_OK){
 			return HC05Driver_Status_Error;

@@ -13,10 +13,16 @@
 
 typedef enum {
 	DigitalOutDriver_State_UnInitialized = 0,
+	DigitalOutDriver_State_DuringInitalization,
 	DigitalOutDriver_State_Low,
 	DigitalOutDriver_State_Blinking,
-	DigitalOutDriver_State_Stady
+	DigitalOutDriver_State_High_Stady
 } DigitalOutDriver_State_TypeDef;
+
+typedef enum {
+	DigitalOutDriver_StartLevel_Low,
+	DigitalOutDriver_StartLevel_High
+} DigitalOutDriver_StartLevel_TypeDef;
 
 typedef enum {
 	DigitalOutDriver_Status_OK = 0,
@@ -36,7 +42,8 @@ typedef struct {
 	uint32_t						onOffTimeCounter;
 } DigitalOutDriver_TypeDef;
 
-DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_Port_TypeDef* port, DigitalOutDriver_Pin_TypeDef* pin);
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_Port_TypeDef* port, DigitalOutDriver_Pin_TypeDef* pin,
+		DigitalOutDriver_StartLevel_TypeDef startLevel);
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_getState(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_State_TypeDef* pRetState);
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_setHigh(DigitalOutDriver_TypeDef* pSelf);
 DigitalOutDriver_Status_TypeDef DigitalOutDriver_setLow(DigitalOutDriver_TypeDef* pSelf);

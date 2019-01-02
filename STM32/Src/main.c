@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * COPYRIGHT(c) 2019 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -47,6 +47,7 @@
 #include "digital_out_driver.h"
 #include "uart_driver.h"
 #include "hc05_driver.h"
+#include "bluetooth_protocol_middleware.h"
 
 #include "string.h"
 
@@ -65,13 +66,19 @@ DigitalOutDriver_TypeDef	led1Driver;
 DigitalOutDriver_TypeDef	led2Driver;
 DigitalOutDriver_TypeDef	led3Driver;
 
+DigitalOutDriver_TypeDef	debugOut0;
+
 DigitalOutDriver_TypeDef	hc05KeyDriver;
 
 DigitalOutDriver_Pin_TypeDef hc05KeyPin = HC05_KEY_Pin;
 
-//DigitalOutDriver_Pin_TypeDef ledDebug1Pin = LD1_Pin;
+DigitalOutDriver_Pin_TypeDef ledDebug1Pin = LD1_Pin;
 DigitalOutDriver_Pin_TypeDef ledDebug2Pin = LD2_Pin;
 DigitalOutDriver_Pin_TypeDef ledDebug3Pin = LD3_Pin;
+
+DigitalOutDriver_Pin_TypeDef debugOut0Pin = DUBUG_OUT_0_Pin;
+
+BluetoothProtocolMiddleware_TypeDef	btMiddleware;
 
 /* USER CODE END PV */
 
@@ -88,11 +95,13 @@ void SystemClock_Config(void);
 extern UART_HandleTypeDef huart1;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	DigitalOutDriver_setHigh(&debugOut0);
 	if (huart == (&huart1)){
 		if (UartDriver_receivedBytesCallback(&uart1Driver) != UartDriver_Status_OK){
 			Error_Handler();
 		}
 	}
+	DigitalOutDriver_setLow(&debugOut0);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
@@ -143,17 +152,21 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-//  DigitalOutDriver_init(&led1Driver, (DigitalOutDriver_Port_TypeDef*)LD1_GPIO_Port, &ledDebug1Pin);
-  DigitalOutDriver_init(&led2Driver, (DigitalOutDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin);
-  DigitalOutDriver_init(&led3Driver, (DigitalOutDriver_Port_TypeDef*)LD3_GPIO_Port, &ledDebug3Pin);
+  DigitalOutDriver_init(&led1Driver, (DigitalOutDriver_Port_TypeDef*)LD1_GPIO_Port, &ledDebug1Pin, DigitalOutDriver_StartLevel_High);
+  DigitalOutDriver_init(&led2Driver, (DigitalOutDriver_Port_TypeDef*)LD2_GPIO_Port, &ledDebug2Pin, DigitalOutDriver_StartLevel_High);
+  DigitalOutDriver_init(&led3Driver, (DigitalOutDriver_Port_TypeDef*)LD3_GPIO_Port, &ledDebug3Pin, DigitalOutDriver_StartLevel_High);
 
-  DigitalOutDriver_init(&hc05KeyDriver, (DigitalOutDriver_Port_TypeDef*)HC05_KEY_GPIO_Port, &hc05KeyPin);
+  DigitalOutDriver_init(&debugOut0, (DigitalOutDriver_Port_TypeDef*)DUBUG_OUT_0_GPIO_Port, &debugOut0Pin, DigitalOutDriver_StartLevel_High);
+
+  DigitalOutDriver_init(&hc05KeyDriver, (DigitalOutDriver_Port_TypeDef*)HC05_KEY_GPIO_Port, &hc05KeyPin, DigitalOutDriver_StartLevel_High);
 
   UartDriver_init(&uart1Driver, &huart1, 38400);
 
   HC05Driver_init(&hc05Driver, HC05Driver_Role_Slave, &uart1Driver, &hc05KeyDriver, HC05_DATA_BAUDRATE, HC05_DEVICE_NAME, HC05_PASSWORD);
 
-  HC05Driver_setReceiveDataCallback(&hc05Driver, foo, NULL, NULL);
+//  BluetoothProtocolMiddleware_init(&btMiddleware, &hc05Driver);
+
+  HC05Driver_Status_TypeDef st = HC05Driver_setReceiveDataCallback(&hc05Driver, foo, NULL, NULL);
 /*  uint8_t buffer[] = {1, 2, 3, 4};
 
   UartDriver_sendBytes(&uartDriver, buffer, 4);
@@ -169,7 +182,10 @@ int main(void)
 	  DigitalOutDriver_setHigh(&led2Driver);
 	  HAL_Delay(200);
 	  DigitalOutDriver_setLow(&led2Driver);
-	  HAL_Delay(500);
+	  HAL_Delay(400);
+	  DigitalOutDriver_toggle(&led1Driver);
+	  HAL_Delay(100);
+//	  BluetoothProtocolMiddleware_worker(&btMiddleware);
 
   /* USER CODE END WHILE */
 

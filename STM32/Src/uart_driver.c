@@ -267,27 +267,29 @@ UartDriver_Status_TypeDef UartDriver_removeReceiveDataCallback(UartDriver_TypeDe
 
 UartDriver_Status_TypeDef UartDriver_receivedBytesCallback(UartDriver_TypeDef* pSelf){
 
-	if (pSelf->state == UartDriver_State_UnInitialized){
+	/*if (pSelf->state == UartDriver_State_UnInitialized){
 		return UartDriver_Status_UnInitializedErrror;
 	}
 
 	if (pSelf->state != UartDriver_State_Receiving){
 		return UartDriver_Status_NotReceivingErrror;
 	}
+*/
+	pSelf->receiveBufferIterator++;// = (pSelf->receiveBufferIterator + 1) % UART_DRIVER_BUFFER_SIZE;
 
+	if (HAL_UART_Receive_IT(pSelf->pUartHandler, pSelf->receiveBuffer+pSelf->receiveBufferIterator, 1) != HAL_OK){
+		return UartDriver_Status_Error;
+	}
+/*
 	for (uint16_t fooIt=0; fooIt<UART_DRIVER_MAX_CALLBACK_NUMBER; fooIt++){
 		if (pSelf->callbacks[fooIt] != NULL){
 			uint16_t rdIt = pSelf->readIterators[fooIt];
 			pSelf->readIterators[fooIt] = (pSelf->readIterators[fooIt] + 1) % UART_DRIVER_BUFFER_SIZE;
 			pSelf->callbacks[fooIt](pSelf->receiveBuffer[rdIt], pSelf->callbackArgs[fooIt]);
 		}
-	}
+	}	//TODO wywalic to stad i wrzucic do jakiegos thread'a
+*/
 
-	pSelf->receiveBufferIterator = (pSelf->receiveBufferIterator + 1) % UART_DRIVER_BUFFER_SIZE;
-
-	if (HAL_UART_Receive_IT(pSelf->pUartHandler, pSelf->receiveBuffer+pSelf->receiveBufferIterator, 1) != HAL_OK){
-		return UartDriver_Status_Error;
-	}
 
 	return UartDriver_Status_OK;
 }

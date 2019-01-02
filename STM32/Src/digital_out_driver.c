@@ -7,10 +7,13 @@
 
 #include "digital_out_driver.h"
 
-DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_Port_TypeDef* port, DigitalOutDriver_Pin_TypeDef* pin){
+DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* pSelf, DigitalOutDriver_Port_TypeDef* port, DigitalOutDriver_Pin_TypeDef* pin,
+		DigitalOutDriver_StartLevel_TypeDef startLevel){
 	if (pSelf->state != DigitalOutDriver_State_UnInitialized){
 		return DigitalOutDriver_Status_Errror;
 	}
+
+	pSelf->state = DigitalOutDriver_State_DuringInitalization;
 
 	pSelf->port				= port;
 	pSelf->pin				= pin;
@@ -18,9 +21,21 @@ DigitalOutDriver_Status_TypeDef DigitalOutDriver_init(DigitalOutDriver_TypeDef* 
 	pSelf->offTimeMs		= 0;
 	pSelf->onOffTimeCounter	= 0;
 
-	HAL_GPIO_WritePin(pSelf->port, *(pSelf->pin), GPIO_PIN_SET);
+	DigitalOutDriver_Status_TypeDef ret;
 
-	pSelf->state = DigitalOutDriver_State_Low;
+	switch (startLevel) {
+	case DigitalOutDriver_StartLevel_High:
+		if ((ret = DigitalOutDriver_setHigh(pSelf)) != DigitalOutDriver_Status_OK){
+			return ret;
+		}
+		break;
+	case DigitalOutDriver_StartLevel_Low:
+	default:
+		if ((ret = DigitalOutDriver_setLow(pSelf)) != DigitalOutDriver_Status_OK){
+			return ret;
+		}
+		break;
+	}
 
 	return DigitalOutDriver_Status_OK;
 
@@ -39,7 +54,7 @@ DigitalOutDriver_Status_TypeDef DigitalOutDriver_setHigh(DigitalOutDriver_TypeDe
 
 	HAL_GPIO_WritePin(pSelf->port, *(pSelf->pin), GPIO_PIN_SET);
 
-	pSelf->state = DigitalOutDriver_State_Stady;
+	pSelf->state = DigitalOutDriver_State_High_Stady;
 
 	return DigitalOutDriver_Status_OK;
 
@@ -85,7 +100,7 @@ DigitalOutDriver_Status_TypeDef DigitalOutDriver_toggle(DigitalOutDriver_TypeDef
 		return DigitalOutDriver_Status_Errror;
 	}
 
-	if (state == DigitalOutDriver_State_Stady){
+	if (state == DigitalOutDriver_State_High_Stady){
 		return DigitalOutDriver_setLow(pSelf);
 	} else if (state == DigitalOutDriver_State_Low){
 		return DigitalOutDriver_setHigh(pSelf);
