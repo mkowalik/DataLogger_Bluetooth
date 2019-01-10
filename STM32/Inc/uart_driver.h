@@ -66,14 +66,19 @@ UartDriver_Status_TypeDef UartDriver_setBaudRate(UartDriver_TypeDef* pSelf, uint
 
 UartDriver_Status_TypeDef UartDriver_sendBytes(UartDriver_TypeDef* pSelf, uint8_t* pBuffer, uint16_t bytes);
 
-UartDriver_Status_TypeDef UartDriver_receiveBytesTerminationSign(UartDriver_TypeDef* pSelf, uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);	//TODO dorobic wersje z timeoutem
+UartDriver_Status_TypeDef UartDriver_receiveBytesTerminationSign(UartDriver_TypeDef* pSelf, uint8_t* pReceiveBuffer,
+		uint16_t bufferSize, uint8_t terminationSign);	//TODO dorobic wersje z timeoutem
 UartDriver_Status_TypeDef UartDriver_receiveNBytes(UartDriver_TypeDef* pSelf, uint8_t* pReceiveBuffer, uint16_t bytesToRead);
 
-UartDriver_Status_TypeDef UartDriver_sendAndReceiveTerminationSign(UartDriver_TypeDef* pSelf, uint8_t* pSendBuffer, uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);
-UartDriver_Status_TypeDef UartDriver_sendAndReceiveNBytes(UartDriver_TypeDef* pSelf, uint8_t* pSendBuffer, uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bytesToRead);
+UartDriver_Status_TypeDef UartDriver_sendAndReceiveTerminationSign(UartDriver_TypeDef* pSelf, uint8_t* pSendBuffer,
+		uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);
+UartDriver_Status_TypeDef UartDriver_sendAndReceiveNBytes(UartDriver_TypeDef* pSelf, uint8_t* pSendBuffer,
+		uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bytesToRead);
 
-UartDriver_Status_TypeDef UartDriver_setReceiveDataCallback(UartDriver_TypeDef* pSelf, void (*foo)(uint8_t byte, void* pArgs), void* pArgs, UartDriver_CallbackIterator_TypeDef* pRetCallbackIterator);
-UartDriver_Status_TypeDef UartDriver_removeReceiveDataCallback(UartDriver_TypeDef* pSelf, UartDriver_CallbackIterator_TypeDef callbackIterator);
+UartDriver_Status_TypeDef UartDriver_setReceiveDataCallback(UartDriver_TypeDef* pSelf, void (*foo)(uint8_t byte, void* pArgs),
+		void* pArgs, UartDriver_CallbackIterator_TypeDef* pRetCallbackIterator);
+UartDriver_Status_TypeDef UartDriver_removeReceiveDataCallback(UartDriver_TypeDef* pSelf,
+		UartDriver_CallbackIterator_TypeDef callbackIterator);
 
 UartDriver_Status_TypeDef UartDriver_receivedBytesCallback(UartDriver_TypeDef* pSelf);
 UartDriver_Status_TypeDef UartDriver_transmitCompleteCallback(UartDriver_TypeDef* pSelf);

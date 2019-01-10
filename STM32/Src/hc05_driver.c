@@ -9,8 +9,58 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define	HC05_DEFAULT_TIMEOUT	100
+#define HC05_MAX_NAME_LENGTH	32
+#define HC05_HARD_AT_BAUDRATE	38400
+#define	HC05_STOP_BIT_SETUP		0lu
+#define	HC05_PARITY_SETUP		0lu
+
+#define	HC05_AT_PREFIX_COMMAND				"AT"
+
+#define	HC05_RESTORE_ORGL_AT_COMMAND		"+ORGL"
+
+#define HC05_GET_UART_AT_COMMNAND			"+UART?"
+#define HC05_SET_UART_AT_COMMNAND			"+UART="
+#define HC05_GET_UART_AT_COMMNAND_RESPONSE	"+UART:"
+
+#define HC05_GET_PSWD_AT_COMMNAND			"+PSWD?"
+#define HC05_SET_PSWD_AT_COMMNAND			"+PSWD="
+#define HC05_GET_PSWD_AT_COMMNAND_RESPONSE	"+PSWD:"
+
+#define HC05_GET_NAME_AT_COMMNAND			"+NAME?"
+#define HC05_SET_NAME_AT_COMMNAND			"+NAME="
+#define HC05_GET_NAME_AT_COMMNAND_RESPONSE	"+NAME:"
+
+#define	HC05_GET_ROLE_AT_COMMAND			"+ROLE?"
+#define	HC05_SET_ROLE_AT_COMMAND			"+ROLE="
+#define HC05_GET_ROLE_AT_COMMNAND_RESPONSE	"+ROLE:"
+
+#define	HC05_AT_RESET_COMMAND				"+RESET"
+
+#define	HC05_GET_STATE_AT_COMMNAND			"+STATE?"
+#define	HC05_GET_STATE_AT_COMMNAND_RESPONSE	"+STATE:"
+
+#define	HC05_INITIALIZED_RESPONSE			"INITIALIZED"
+#define	HC05_READY_RESPONSE					"READY"
+#define	HC05_PAIRABLE_RESPONSE				"PAIRABLE"
+#define	HC05_PAIRED_RESPONSE				"PAIRED"
+#define	HC05_INQUIRING_RESPONSE				"INQUIRING"
+#define	HC05_CONNECTING_RESPONSE			"CONNECTING"
+#define	HC05_CONNECTED_RESPONSE				"CONNECTED"
+#define	HC05_DISCONNECTED_RESPONSE			"DISCONNECTED"
+
+#define	HC05_COMMAND_TERMINATION			"\r\n"
+
+#define	HC05_SET_OK_COMMAND_RESPONSE		"OK"
+
+#define	HC05_COMMAND_TRIM_SIGN				'\n'
+
+#define HC05_START_UP_DELAY_MS				1000
+#define HC05_AT_MODE_DELAY_MS				30
+
 static HC05Driver_Status_TypeDef HC05Driver_resetNormalMode(HC05Driver_TypeDef* pSelf);
 static HC05Driver_Status_TypeDef HC05Driver_setATMode(HC05Driver_TypeDef* pSelf);
+static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf);
 
 HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_Role_TypeDef role, \
 		UartDriver_TypeDef* pUartDriver, DigitalOutDriver_TypeDef* pKeyPinDriver, uint32_t baudRate,
@@ -638,7 +688,7 @@ HC05Driver_Status_TypeDef HC05Driver_removeReceiveDataCallback(HC05Driver_TypeDe
 	return HC05Driver_Status_OK;
 }
 
-HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
+static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
 
 	if (pSelf->state == HC05Driver_State_UnInitialized){
 		return HC05Driver_Status_UnInitializedError;

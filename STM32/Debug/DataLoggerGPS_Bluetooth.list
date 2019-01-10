@@ -23,23 +23,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   9 .ARM.attributes 0000002e  00000000  00000000  000201e4  2**0
                   CONTENTS, READONLY
- 10 .debug_info   00014097  00000000  00000000  00020212  2**0
+ 10 .debug_info   000140a2  00000000  00000000  00020212  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_abbrev 000027ef  00000000  00000000  000342a9  2**0
+ 11 .debug_abbrev 000027ef  00000000  00000000  000342b4  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_aranges 00000908  00000000  00000000  00036a98  2**3
+ 12 .debug_aranges 00000908  00000000  00000000  00036aa8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_ranges 000007f0  00000000  00000000  000373a0  2**3
+ 13 .debug_ranges 000007f0  00000000  00000000  000373b0  2**3
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_macro  0002764a  00000000  00000000  00037b90  2**0
+ 14 .debug_macro  0002771c  00000000  00000000  00037ba0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_line   00009670  00000000  00000000  0005f1da  2**0
+ 15 .debug_line   00009671  00000000  00000000  0005f2bc  2**0
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_str    000e98bf  00000000  00000000  0006884a  2**0
+ 16 .debug_str    000e98c6  00000000  00000000  0006892d  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .comment      0000007c  00000000  00000000  00152109  2**0
+ 17 .comment      0000007c  00000000  00000000  001521f3  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  00002914  00000000  00000000  00152188  2**2
+ 18 .debug_frame  00002914  00000000  00000000  00152270  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -7939,7 +7939,7 @@ void MX_GPIO_Init(void)
  800331c:	40020c00 	.word	0x40020c00
 
 08003320 <HC05Driver_init>:
-static HC05Driver_Status_TypeDef HC05Driver_setATMode(HC05Driver_TypeDef* pSelf);
+static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf);
 
 HC05Driver_State_TypeDef HC05Driver_init(HC05Driver_TypeDef* pSelf, HC05Driver_Role_TypeDef role, \
 		UartDriver_TypeDef* pUartDriver, DigitalOutDriver_TypeDef* pKeyPinDriver, uint32_t baudRate,
@@ -10078,7 +10078,7 @@ HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* 
 	return HC05Driver_Status_OK;
 }
 
-HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
+static HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf){
  800415c:	b590      	push	{r4, r7, lr}
  800415e:	b085      	sub	sp, #20
  8004160:	af00      	add	r7, sp, #0
@@ -10664,7 +10664,7 @@ int main(void)
  80044ea:	9302      	str	r3, [sp, #8]
  80044ec:	4b20      	ldr	r3, [pc, #128]	; (8004570 <main+0xe8>)
  80044ee:	9301      	str	r3, [sp, #4]
- 80044f0:	f242 7310 	movw	r3, #10000	; 0x2710
+ 80044f0:	f44f 33e1 	mov.w	r3, #115200	; 0x1c200
  80044f4:	9300      	str	r3, [sp, #0]
  80044f6:	4b1b      	ldr	r3, [pc, #108]	; (8004564 <main+0xdc>)
  80044f8:	4a1c      	ldr	r2, [pc, #112]	; (800456c <main+0xe4>)

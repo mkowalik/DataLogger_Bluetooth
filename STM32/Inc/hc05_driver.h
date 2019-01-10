@@ -15,61 +15,14 @@
 
 #define	HC05_PASSWORD			2688
 #define	HC05_DEVICE_NAME		"AGH_LOGGER_GRAZYNA2"
-#define HC05_DATA_BAUDRATE		10000 //1382400
+#define HC05_DATA_BAUDRATE		115200
 
 /********** 	END OF SET UP PART		**********/
 
-#define	HC05_DEFAULT_TIMEOUT	100
-#define HC05_MAX_NAME_LENGTH	32
-#define HC05_HARD_AT_BAUDRATE	38400
-#define	HC05_STOP_BIT_SETUP		0lu
-#define	HC05_PARITY_SETUP		0lu
-#define HC05_BUFFER_SIZE		128
-
-#define	HC05_AT_PREFIX_COMMAND				"AT"
-
-#define	HC05_RESTORE_ORGL_AT_COMMAND		"+ORGL"
-
-#define HC05_GET_UART_AT_COMMNAND			"+UART?"
-#define HC05_SET_UART_AT_COMMNAND			"+UART="
-#define HC05_GET_UART_AT_COMMNAND_RESPONSE	"+UART:"
-
-#define HC05_GET_PSWD_AT_COMMNAND			"+PSWD?"
-#define HC05_SET_PSWD_AT_COMMNAND			"+PSWD="
-#define HC05_GET_PSWD_AT_COMMNAND_RESPONSE	"+PSWD:"
-
-#define HC05_GET_NAME_AT_COMMNAND			"+NAME?"
-#define HC05_SET_NAME_AT_COMMNAND			"+NAME="
-#define HC05_GET_NAME_AT_COMMNAND_RESPONSE	"+NAME:"
-
-#define	HC05_GET_ROLE_AT_COMMAND			"+ROLE?"
-#define	HC05_SET_ROLE_AT_COMMAND			"+ROLE="
-#define HC05_GET_ROLE_AT_COMMNAND_RESPONSE	"+ROLE:"
-
-#define	HC05_AT_RESET_COMMAND				"+RESET"
-
-#define	HC05_GET_STATE_AT_COMMNAND			"+STATE?"
-#define	HC05_GET_STATE_AT_COMMNAND_RESPONSE	"+STATE:"
-
-#define	HC05_INITIALIZED_RESPONSE			"INITIALIZED"
-#define	HC05_READY_RESPONSE					"READY"
-#define	HC05_PAIRABLE_RESPONSE				"PAIRABLE"
-#define	HC05_PAIRED_RESPONSE				"PAIRED"
-#define	HC05_INQUIRING_RESPONSE				"INQUIRING"
-#define	HC05_CONNECTING_RESPONSE			"CONNECTING"
-#define	HC05_CONNECTED_RESPONSE				"CONNECTED"
-#define	HC05_DISCONNECTED_RESPONSE			"DISCONNECTED"
-
-#define	HC05_COMMAND_TERMINATION			"\r\n"
-
-#define	HC05_SET_OK_COMMAND_RESPONSE		"OK"
-
-#define	HC05_COMMAND_TRIM_SIGN				'\n'
-
-#define HC05_START_UP_DELAY_MS				1000
-#define HC05_AT_MODE_DELAY_MS				30
 
 #define	HC05_DRIVER_MAX_CALLBACK_NUMBER		UART_DRIVER_MAX_CALLBACK_NUMBER
+#define HC05_BUFFER_SIZE		128
+
 
 typedef int16_t HC05Driver_CallbackIterator_TypeDef;
 
@@ -138,14 +91,14 @@ HC05Driver_Status_TypeDef HC05Driver_setDeviceRole(HC05Driver_TypeDef* pSelf, HC
 HC05Driver_Status_TypeDef HC05Driver_getState(HC05Driver_TypeDef* pSelf, HC05Driver_State_TypeDef* pRetState);
 
 HC05Driver_Status_TypeDef HC05Driver_sendData(HC05Driver_TypeDef* pSelf, uint8_t* data, uint16_t bytes);
-HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataTerminationSign(HC05Driver_TypeDef* pSelf, uint8_t* pSendData, uint16_t bytesToSend, \
-		uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);
-HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataNBytes(HC05Driver_TypeDef* pSelf, uint8_t* pSendData, uint16_t bytesToSend, \
-		uint8_t* pReceiveBuffer, uint16_t bytesToReceive);
+HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataTerminationSign(HC05Driver_TypeDef* pSelf, uint8_t* pSendData,
+		uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bufferSize, uint8_t terminationSign);
+HC05Driver_Status_TypeDef HC05Driver_sendAndReceiveDataNBytes(HC05Driver_TypeDef* pSelf, uint8_t* pSendData,
+		uint16_t bytesToSend, uint8_t* pReceiveBuffer, uint16_t bytesToReceive);
 
-HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* pSelf, void (*foo)(uint8_t byte, void* pArgs), void* pArgs, HC05Driver_CallbackIterator_TypeDef* pRetCallbackIterator);
-HC05Driver_Status_TypeDef HC05Driver_removeReceiveDataCallback(HC05Driver_TypeDef* pSelf, UartDriver_CallbackIterator_TypeDef callbackIterator);
-
-HC05Driver_Status_TypeDef HC05Driver_setDataMode(HC05Driver_TypeDef* pSelf);
+HC05Driver_Status_TypeDef HC05Driver_setReceiveDataCallback(HC05Driver_TypeDef* pSelf,
+		void (*foo)(uint8_t byte, void* pArgs), void* pArgs, HC05Driver_CallbackIterator_TypeDef* pRetCallbackIterator);
+HC05Driver_Status_TypeDef HC05Driver_removeReceiveDataCallback(HC05Driver_TypeDef* pSelf,
+		UartDriver_CallbackIterator_TypeDef callbackIterator);
 
 #endif /* HC05Driver_DRIVER_H_ */
